@@ -8,6 +8,7 @@
     #chat-box { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; }
     #message { width: 70%; }
     #typing { font-style: italic; color: grey; }
+    #status { color: green; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -15,8 +16,11 @@
 
   {% if role == 'host' %}
     <h3>Invite your friend:</h3>
-    <p>Share this link: <strong>{{ request.url.replace('role=host', 'role=guest') }}</strong></p>
-    <p><em>Waiting for your friend to join...</em></p>
+    <p>Share this link: 
+      <strong id="share-link">{{ url_root }}chat/{{ token }}?role=guest</strong>
+      <button onclick="copyLink()">Copy</button>
+    </p>
+    <p id="status">Waiting for your friend to join...</p>
     <button onclick="endChat()">End Chat</button>
   {% endif %}
 
@@ -29,7 +33,7 @@
     const socket = io();
     const room = "{{ token }}";
     const role = "{{ role }}";
-    const username = prompt("Enter your name:");
+    const username = prompt("Enter your name:") || `Anonymous_${Math.floor(Math.random() * 1000)}`;
 
     socket.emit("join", { room, username });
 
@@ -39,7 +43,13 @@
       messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.msg}`;
       chatBox.appendChild(messageElement);
       chatBox.scrollTop = chatBox.scrollHeight;
-      document.getElementById("typing").innerText = ""; // clear typing status
+
+      // If this is a "joined the chat" system message, notify host
+      if (role === "host" && data.msg.includes("has joined")) {
+        document.getElementById("status").innerText = `${data.username} has joined the chat.`;
+      }
+
+      document.getElementById("typing").innerText = ""; // clear typing
     });
 
     socket.on("typing", data => {
@@ -51,20 +61,3 @@
 
     socket.on("chat_ended", () => {
       alert("The chat has been ended by the host.");
-      document.body.innerHTML = "<h2>Chat session ended.</h2>";
-    });
-
-    function sendMessage() {
-      const msgInput = document.getElementById("message");
-      const msg = msgInput.value;
-      if (msg.trim() === "") return;
-      socket.emit("message", { msg, room, username });
-      msgInput.value = "";
-    }
-
-    function notifyTyping() {
-      socket.emit("typing", { room, username });
-    }
-
-    function endChat() {
-      if (confirm("Are you sure you want to end the chat for everyone?

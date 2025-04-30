@@ -16,7 +16,7 @@ def index():
 @app.route('/chat/<token>')
 def chat(token):
     role = request.args.get('role', 'guest')
-    return render_template('chat.html', token=token, role=role)
+    return render_template('chat.html', token=token, role=role, url_root=request.url_root)
 
 @socketio.on('join')
 def handle_join(data):
