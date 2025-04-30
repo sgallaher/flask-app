@@ -1,33 +1,147 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Secure Chat</title>
   <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; }
-    #chat-box { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; }
-    #message { width: 70%; }
-    #typing { font-style: italic; color: grey; }
-    #status { color: green; font-weight: bold; }
+    /* Reset some defaults */
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      height: 100%;
+    }
+
+    /* Container to ensure layout doesn't stretch too much */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* Header bar */
+    .header {
+      background-color: #25D366;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h3 {
+      margin: 0;
+    }
+    .header .status {
+      font-size: 14px;
+      color: #ffffff;
+      opacity: 0.7;
+    }
+
+    /* Chat box area */
+    #chat-box {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background-color: #e5ddd5;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Message styles */
+    .message {
+      max-width: 80%;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      display: inline-block;
+      word-wrap: break-word;
+    }
+    .message.left {
+      background-color: #f1f0f0;
+      align-self: flex-start;
+    }
+    .message.right {
+      background-color: #dcf8c6;
+      align-self: flex-end;
+    }
+
+    /* Typing indicator */
+    #typing {
+      font-style: italic;
+      color: grey;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    /* Footer with input */
+    .footer {
+      display: flex;
+      padding: 10px;
+      background-color: white;
+      border-top: 1px solid #ccc;
+      align-items: center;
+    }
+
+    #message {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      margin-right: 10px;
+      font-size: 14px;
+      background-color: #f1f1f1;
+    }
+
+    button {
+      background-color: #25D366;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Hide the share link in chat */
+    #share-link {
+      display: none;
+    }
+
+    /* Chat ended message */
+    .chat-ended {
+      text-align: center;
+      font-size: 20px;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
-  <h2>Chat Room</h2>
 
-  {% if role == 'host' %}
-    <h3>Invite your friend:</h3>
-    <p>Share this link: 
-      <strong id="share-link">{{ url_root }}chat/{{ token }}?role=guest</strong>
-      <button onclick="copyLink()">Copy</button>
-    </p>
-    <p id="status">Waiting for your friend to join...</p>
-    <button onclick="endChat()">End Chat</button>
-  {% endif %}
+  <div class="chat-container">
 
-  <div id="chat-box"></div>
-  <p id="typing"></p>
-  <input id="message" placeholder="Type a message..." oninput="notifyTyping()" />
-  <button onclick="sendMessage()">Send</button>
+    <div class="header">
+      <h3>Chat Room</h3>
+      {% if role == 'host' %}
+        <span class="status">Waiting for your friend...</span>
+      {% endif %}
+    </div>
+
+    <div id="chat-box"></div>
+    <p id="typing"></p>
+
+    <div class="footer">
+      <input id="message" placeholder="Type a message..." oninput="notifyTyping()" />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+
+  </div>
 
   <script>
     const socket = io();
@@ -40,14 +154,16 @@
 
     socket.on("message", data => {
       const chatBox = document.getElementById("chat-box");
-      const messageElement = document.createElement("p");
+      const messageElement = document.createElement("div");
+      messageElement.classList.add("message");
+      messageElement.classList.add(data.username === username ? "right" : "left");
       messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.msg}`;
       chatBox.appendChild(messageElement);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
 
       // Host sees when guest joins
       if (role === "host" && data.msg.includes("has joined")) {
-        document.getElementById("status").innerText = `${data.username} has joined the chat.`;
+        document.querySelector('.status').innerText = `${data.username} has joined the chat.`;
       }
 
       document.getElementById("typing").innerText = ""; // Clear typing message
@@ -62,9 +178,10 @@
 
     socket.on("chat_ended", () => {
       alert("The chat has been ended by the host.");
-      document.body.innerHTML = "<h2>Chat session ended.</h2>";
+      document.body.innerHTML = "<h2 class='chat-ended'>Chat session ended.</h2>";
     });
 
+    // Send message when button is clicked or Enter is pressed
     function sendMessage() {
       const msgInput = document.getElementById("message");
       const msg = msgInput.value.trim();
@@ -77,18 +194,20 @@
       socket.emit("typing", { room, username });
     }
 
+    // Listen for Enter key press
+    document.getElementById("message").addEventListener("keypress", function(event) {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault(); // Prevent the new line
+        sendMessage();
+      }
+    });
+
     function endChat() {
       if (confirm("Are you sure you want to end the chat for everyone?")) {
         socket.emit("end_chat", { room });
       }
     }
-
-    function copyLink() {
-      const text = document.getElementById("share-link").innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        alert("Link copied to clipboard!");
-      });
-    }
   </script>
+
 </body>
 </html>
