@@ -96,7 +96,7 @@
     document.getElementById("theme-toggle").addEventListener("click", function() {
       let themeLink = document.getElementById('theme-stylesheet');
       const themeButton = document.getElementById("theme-toggle");
-
+      console.log("Theme switch clicked!");  // Debugging log
       if (currentTheme === 'whatsapp') {
         themeLink.setAttribute('href', themeButton.getAttribute('data-messenger'));
         currentTheme = 'messenger';
