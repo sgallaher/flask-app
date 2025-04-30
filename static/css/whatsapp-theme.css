@@ -1,0 +1,48 @@
+
+/* General Chat Container */
+.chat-container {
+    background-color: #e5ddd5;
+    color: #333;
+    font-family: 'Helvetica Neue', sans-serif;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* Message Style */
+.message-item {
+    background-color: #25d366;
+    color: white;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+    max-width: 80%;
+}
+
+.message-item .message-sender {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.message-item .message-text {
+    margin-top: 5px;
+}
+
+.message-item .message-time {
+    font-size: 0.75em;
+    color: #bbb;
+    margin-top: 5px;
+    text-align: right;
+}
+
+/* Header */
+.admin-header {
+    font-size: 24px;
+    color: #128C7E;
+    margin-bottom: 20px;
+}
+
+/* Specific to admin page */
+.message-list {
+    display: flex;
+    flex-direction: column;
+}

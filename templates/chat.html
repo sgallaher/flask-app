@@ -1,64 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>Secure Chat</title>
   <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #ece5dd;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      background-color: #075e54;
-      color: white;
-      padding: 10px;
-      text-align: center;
-    }
-    #chat-box {
-      flex-grow: 1;
-      padding: 10px;
-      overflow-y: auto;
-      background: #e5ddd5;
-    }
-    #chat-box p {
-      background: #dcf8c6;
-      padding: 10px;
-      border-radius: 7px;
-      margin-bottom: 10px;
-      max-width: 60%;
-    }
-    #typing {
-      color: grey;
-      font-style: italic;
-      margin-left: 10px;
-    }
-    footer {
-      display: flex;
-      background: #f0f0f0;
-      padding: 10px;
-      border-top: 1px solid #ccc;
-    }
-    #message {
-      flex-grow: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 20px;
-      margin-right: 10px;
-    }
-    button {
-      background-color: #25d366;
-      color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 10px 20px;
-      cursor: pointer;
-    }
-  </style>
+
+  <!-- Default theme (WhatsApp) -->
+  <link id="theme-stylesheet" rel="stylesheet" href="{{ url_for('static', filename='css/whatsapp.css') }}">
+
 </head>
 <body>
   <header>
@@ -67,6 +15,8 @@
       <p>Share this link: <strong>{{ request.url.replace('role=host', 'role=guest') }}</strong></p>
       <button onclick="endChat()">End Chat</button>
     {% endif %}
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle">Switch Theme</button>
   </header>
 
   <div id="chat-box"></div>
@@ -134,6 +84,24 @@
         sendMessage();
       }
     }
+
+    // Theme Switching Logic
+    let currentTheme = 'whatsapp';  // Default theme
+
+    document.getElementById("theme-toggle").addEventListener("click", function() {
+      let themeLink = document.getElementById('theme-stylesheet');
+      
+      if (currentTheme === 'whatsapp') {
+        themeLink.setAttribute('href', '{{ url_for("static", filename="css/messenger.css") }}');
+        currentTheme = 'messenger';
+      } else if (currentTheme === 'messenger') {
+        themeLink.setAttribute('href', '{{ url_for("static", filename="css/imessage.css") }}');
+        currentTheme = 'imessage';
+      } else {
+        themeLink.setAttribute('href', '{{ url_for("static", filename="css/whatsapp.css") }}');
+        currentTheme = 'whatsapp';
+      }
+    });
   </script>
 </body>
 </html>
