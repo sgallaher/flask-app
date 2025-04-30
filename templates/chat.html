@@ -16,7 +16,12 @@
       <button onclick="endChat()">End Chat</button>
     {% endif %}
     <!-- Theme Toggle Button -->
-    <button id="theme-toggle">Switch Theme</button>
+    <button id="theme-toggle" 
+            data-whatsapp="{{ url_for('static', filename='css/whatsapp-theme.css') }}"
+            data-messenger="{{ url_for('static', filename='css/messenger-theme.css') }}"
+            data-imessage="{{ url_for('static', filename='css/imessage-theme.css') }}">
+      Switch Theme
+    </button>
   </header>
 
   <div id="chat-box"></div>
@@ -90,15 +95,16 @@
 
     document.getElementById("theme-toggle").addEventListener("click", function() {
       let themeLink = document.getElementById('theme-stylesheet');
-      
+      const themeButton = document.getElementById("theme-toggle");
+
       if (currentTheme === 'whatsapp') {
-        themeLink.setAttribute('href', '{{ url_for("static", filename="css/messenger-theme.css") }}');
+        themeLink.setAttribute('href', themeButton.getAttribute('data-messenger'));
         currentTheme = 'messenger';
       } else if (currentTheme === 'messenger') {
-        themeLink.setAttribute('href', '{{ url_for("static", filename="css/imessage-theme.css") }}');
+        themeLink.setAttribute('href', themeButton.getAttribute('data-imessage'));
         currentTheme = 'imessage';
       } else {
-        themeLink.setAttribute('href', '{{ url_for("static", filename="css/whatsapp.css") }}');
+        themeLink.setAttribute('href', themeButton.getAttribute('data-whatsapp'));
         currentTheme = 'whatsapp';
       }
     });
