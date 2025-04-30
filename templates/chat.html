@@ -3,12 +3,84 @@
 <head>
   <title>Secure Chat</title>
   <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-  <script src="{{ url_for('static', filename='chat.js') }}" defer></script>
+  <style>
+    #chat-box {
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+    #waiting-box {
+      color: grey;
+    }
+  </style>
 </head>
 <body>
   <h2>Chat Room</h2>
-  <div id="chat-box" data-token="{{ token }}"></div>
-  <input id="message" placeholder="Type a message..." />
+  <div id="waiting-box"></div>
+  <div id="chat-box"></div>
+  <input id="message" placeholder="Type a message..." oninput="userTyping()" />
   <button onclick="sendMessage()">Send</button>
+  <button onclick="closeSession()">Close Session</button>
+
+  <h3>Invite your friend:</h3>
+  <p>Share this link: <strong>{{ request.url }}</strong></p>
+
+  <script>
+    const socket = io();
+    const token = "{{ token }}";
+    const role = "{{ role }}";
+    const username = prompt("Enter your name:");
+    
+    socket.emit("join", { room: token, username: username, role: role });
+
+    // Display waiting message until client joins
+    socket.on('waiting', data => {
+      const waitingBox = document.getElementById("waiting-box");
+      waitingBox.innerHTML = data.msg;
+    });
+
+    // Show real-time messages
+    socket.on("message", data => {
+      const chatBox = document.getElementById("chat-box");
+      chatBox.innerHTML += `<p><strong>${data.username || "System"}:</strong> ${data.msg}</p>`;
+      chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
+    });
+
+    // Indicate when a user is typing
+    socket.on("user_typing", data => {
+      const waitingBox = document.getElementById("waiting-box");
+      waitingBox.innerHTML = `${data.username} is typing...`;
+      setTimeout(() => waitingBox.innerHTML = '', 2000); // Remove after 2 seconds
+    });
+
+    // Handle session close
+    socket.on("message", data => {
+      if (data.msg === "The host has closed the session. You will be disconnected.") {
+        document.getElementById("message").disabled = true;
+        document.getElementById("chat-box").innerHTML += `<p><strong>System:</strong> ${data.msg}</p>`;
+      }
+    });
+
+    // Send message
+    function sendMessage() {
+      const msg = document.getElementById("message").value;
+      socket.emit("message", { msg, room: token, username: username });
+      document.getElementById("message").value = "";
+    }
+
+    // Notify when user is typing
+    function userTyping() {
+      socket.emit('user_typing', { room: token, username: username });
+    }
+
+    // Close session
+    function closeSession() {
+      if (role === 'host') {
+        socket.emit("close_session", { room: token });
+      }
+    }
+  </script>
 </body>
 </html>
