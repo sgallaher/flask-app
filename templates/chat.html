@@ -6,16 +6,14 @@
 
   <!-- Default theme (WhatsApp) -->
   <link id="theme-stylesheet" rel="stylesheet" href="{{ url_for('static', filename='css/whatsapp-theme.css') }}">
-
 </head>
 <body>
-  <header>
+  <header class="admin-header">
     <h2>Chat Room</h2>
     {% if role == 'host' %}
       <p>Share this link: <strong>{{ request.url.replace('role=host', 'role=guest') }}</strong></p>
       <button onclick="endChat()">End Chat</button>
     {% endif %}
-    <!-- Theme Toggle Button -->
     <button id="theme-toggle" 
             data-whatsapp="{{ url_for('static', filename='css/whatsapp-theme.css') }}"
             data-messenger="{{ url_for('static', filename='css/messenger-theme.css') }}"
@@ -24,8 +22,11 @@
     </button>
   </header>
 
-  <div id="chat-box"></div>
+  <!-- 🧩 Chat messages container -->
+  <div id="chat-box" class="chat-container"></div>
   <p id="typing"></p>
+
+  <!-- 🧩 Input area -->
   <footer>
     <input id="message" placeholder="Type a message..." maxlength="255" oninput="notifyTyping()" onkeypress="checkEnter(event)" />
     <button onclick="sendMessage()">Send</button>
@@ -41,8 +42,16 @@
 
     socket.on("message", data => {
       const chatBox = document.getElementById("chat-box");
-      const messageElement = document.createElement("p");
-      messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.msg}`;
+
+      const messageElement = document.createElement("div");
+      messageElement.className = "message-item";
+
+      messageElement.innerHTML = `
+        <div class="message-sender">${data.username}</div>
+        <div class="message-text">${data.msg}</div>
+        <div class="message-time">${new Date().toLocaleTimeString()}</div>
+      `;
+
       chatBox.appendChild(messageElement);
       chatBox.scrollTop = chatBox.scrollHeight;
       document.getElementById("typing").innerText = "";
@@ -90,13 +99,12 @@
       }
     }
 
-    // Theme Switching Logic
-    let currentTheme = 'whatsapp';  // Default theme
-
+    // 🌈 Theme switching
+    let currentTheme = 'whatsapp';
     document.getElementById("theme-toggle").addEventListener("click", function() {
       let themeLink = document.getElementById('theme-stylesheet');
       const themeButton = document.getElementById("theme-toggle");
-      console.log("Theme switch clicked!");  // Debugging log
+
       if (currentTheme === 'whatsapp') {
         themeLink.setAttribute('href', themeButton.getAttribute('data-messenger'));
         currentTheme = 'messenger';
