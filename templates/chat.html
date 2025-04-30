@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Secure Chat</title>
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='chat.js') }}" defer></script>
+</head>
+<body>
+  <h2>Chat Room</h2>
+  <div id="chat-box" data-token="{{ token }}"></div>
+  <input id="message" placeholder="Type a message..." />
+  <button onclick="sendMessage()">Send</button>
+</body>
+</html>
