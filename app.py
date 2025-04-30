@@ -10,7 +10,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/')
 def index():
-    token = str(uuid.uuid4())
+    token = str(uuid.uuid4())  # Generate unique token for each session
     return redirect(url_for('chat', token=token, role='host'))
 
 @app.route('/chat/<token>')
@@ -21,7 +21,7 @@ def chat(token):
 @socketio.on('join')
 def handle_join(data):
     room = data['room']
-    join_room(room)
+    join_room(room)  # Both the host and guest join the same room
     emit('message', {
         'msg': f"{data['username']} has joined the chat.",
         'username': 'System'
@@ -32,7 +32,7 @@ def handle_message(data):
     emit('message', {
         'msg': data['msg'],
         'username': data['username']
-    }, room=data['room'])
+    }, room=data['room'])  # Emit message to the room
 
 @socketio.on('typing')
 def handle_typing(data):
@@ -42,7 +42,7 @@ def handle_typing(data):
 
 @socketio.on('end_chat')
 def handle_end_chat(data):
-    emit('chat_ended', {}, room=data['room'])
+    emit('chat_ended', {}, room=data['room'])  # Notify everyone that the chat ended
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

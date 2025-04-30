@@ -35,6 +35,7 @@
     const role = "{{ role }}";
     const username = prompt("Enter your name:") || `Anonymous_${Math.floor(Math.random() * 1000)}`;
 
+    // Emit join message when user enters the chat
     socket.emit("join", { room, username });
 
     socket.on("message", data => {
@@ -44,12 +45,12 @@
       chatBox.appendChild(messageElement);
       chatBox.scrollTop = chatBox.scrollHeight;
 
-      // If this is a "joined the chat" system message, notify host
+      // Host sees when guest joins
       if (role === "host" && data.msg.includes("has joined")) {
         document.getElementById("status").innerText = `${data.username} has joined the chat.`;
       }
 
-      document.getElementById("typing").innerText = ""; // clear typing
+      document.getElementById("typing").innerText = ""; // Clear typing message
     });
 
     socket.on("typing", data => {
@@ -61,3 +62,33 @@
 
     socket.on("chat_ended", () => {
       alert("The chat has been ended by the host.");
+      document.body.innerHTML = "<h2>Chat session ended.</h2>";
+    });
+
+    function sendMessage() {
+      const msgInput = document.getElementById("message");
+      const msg = msgInput.value.trim();
+      if (msg === "") return; // Don't send empty messages
+      socket.emit("message", { msg, room, username });
+      msgInput.value = "";
+    }
+
+    function notifyTyping() {
+      socket.emit("typing", { room, username });
+    }
+
+    function endChat() {
+      if (confirm("Are you sure you want to end the chat for everyone?")) {
+        socket.emit("end_chat", { room });
+      }
+    }
+
+    function copyLink() {
+      const text = document.getElementById("share-link").innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Link copied to clipboard!");
+      });
+    }
+  </script>
+</body>
+</html>
