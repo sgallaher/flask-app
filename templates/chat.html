@@ -4,83 +4,67 @@
   <title>Secure Chat</title>
   <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
   <style>
-    #chat-box {
-      height: 300px;
-      overflow-y: scroll;
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
-      padding: 10px;
-    }
-    #waiting-box {
-      color: grey;
-    }
+    body { font-family: Arial, sans-serif; }
+    #chat-box { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; }
+    #message { width: 70%; }
+    #typing { font-style: italic; color: grey; }
   </style>
 </head>
 <body>
   <h2>Chat Room</h2>
-  <div id="waiting-box"></div>
-  <div id="chat-box"></div>
-  <input id="message" placeholder="Type a message..." oninput="userTyping()" />
-  <button onclick="sendMessage()">Send</button>
-  <button onclick="closeSession()">Close Session</button>
 
-  <h3>Invite your friend:</h3>
-  <p>Share this link: <strong>{{ request.url }}</strong></p>
+  {% if role == 'host' %}
+    <h3>Invite your friend:</h3>
+    <p>Share this link: <strong>{{ request.url.replace('role=host', 'role=guest') }}</strong></p>
+    <p><em>Waiting for your friend to join...</em></p>
+    <button onclick="endChat()">End Chat</button>
+  {% endif %}
+
+  <div id="chat-box"></div>
+  <p id="typing"></p>
+  <input id="message" placeholder="Type a message..." oninput="notifyTyping()" />
+  <button onclick="sendMessage()">Send</button>
 
   <script>
     const socket = io();
-    const token = "{{ token }}";
+    const room = "{{ token }}";
     const role = "{{ role }}";
     const username = prompt("Enter your name:");
-    
-    socket.emit("join", { room: token, username: username, role: role });
 
-    // Display waiting message until client joins
-    socket.on('waiting', data => {
-      const waitingBox = document.getElementById("waiting-box");
-      waitingBox.innerHTML = data.msg;
-    });
+    socket.emit("join", { room, username });
 
-    // Show real-time messages
     socket.on("message", data => {
       const chatBox = document.getElementById("chat-box");
-      chatBox.innerHTML += `<p><strong>${data.username || "System"}:</strong> ${data.msg}</p>`;
-      chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
+      const messageElement = document.createElement("p");
+      messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.msg}`;
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      document.getElementById("typing").innerText = ""; // clear typing status
     });
 
-    // Indicate when a user is typing
-    socket.on("user_typing", data => {
-      const waitingBox = document.getElementById("waiting-box");
-      waitingBox.innerHTML = `${data.username} is typing...`;
-      setTimeout(() => waitingBox.innerHTML = '', 2000); // Remove after 2 seconds
+    socket.on("typing", data => {
+      document.getElementById("typing").innerText = `${data.username} is typing...`;
+      setTimeout(() => {
+        document.getElementById("typing").innerText = "";
+      }, 2000);
     });
 
-    // Handle session close
-    socket.on("message", data => {
-      if (data.msg === "The host has closed the session. You will be disconnected.") {
-        document.getElementById("message").disabled = true;
-        document.getElementById("chat-box").innerHTML += `<p><strong>System:</strong> ${data.msg}</p>`;
-      }
+    socket.on("chat_ended", () => {
+      alert("The chat has been ended by the host.");
+      document.body.innerHTML = "<h2>Chat session ended.</h2>";
     });
 
-    // Send message
     function sendMessage() {
-      const msg = document.getElementById("message").value;
-      socket.emit("message", { msg, room: token, username: username });
-      document.getElementById("message").value = "";
+      const msgInput = document.getElementById("message");
+      const msg = msgInput.value;
+      if (msg.trim() === "") return;
+      socket.emit("message", { msg, room, username });
+      msgInput.value = "";
     }
 
-    // Notify when user is typing
-    function userTyping() {
-      socket.emit('user_typing', { room: token, username: username });
+    function notifyTyping() {
+      socket.emit("typing", { room, username });
     }
 
-    // Close session
-    function closeSession() {
-      if (role === 'host') {
-        socket.emit("close_session", { room: token });
-      }
-    }
-  </script>
-</body>
-</html>
+    function endChat() {
+      if (confirm("Are you sure you want to end the chat for everyone?
